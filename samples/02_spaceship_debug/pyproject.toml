@@ -1,0 +1,19 @@
+[project]
+name = "spaceship-debug"
+version = "0.1.0"
+description = "失敗するテストを手掛かりに宇宙船を修理するAIデバッグ演習"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "rich>=14.1,<15",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+pythonpath = ["."]

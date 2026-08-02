@@ -25,6 +25,27 @@ ANEC (国際原子力人材育成) 事業の一環として実施する 1.5日�
 | [part5.pdf](pdfs/part5.pdf) | Part 5 | 開発実践 — 仕様書から動くアプリまで | 1日目 16:30〜18:00 + 2日目 9:00〜10:45 |
 | [part6.pdf](pdfs/part6.pdf) | Part 6 | ライトニングトーク大会 + まとめ | 2日目 11:00〜12:00 |
 
+## Pythonサンプルプログラム
+
+AI駆動開発とuvを体験する3つの独立プロジェクトを [`samples/`](samples/) に収録して
+います。すべて有料APIなしで動作します。
+
+| サンプル | 内容 |
+|---|---|
+| [Evolving Game](samples/01_evolving_game/) | 参加者の要望をその場で追加して進化させるブロック崩し |
+| [Spaceship Debug](samples/02_spaceship_debug/) | 失敗するテストから宇宙船制御ソフトのバグを調査・修正する演習 |
+| [Gesture Arena](samples/03_gesture_arena/) | 手のジェスチャーで操作するローカル画像認識ゲーム |
+
+基本的な実行方法は共通です。
+
+```bash
+cd samples/01_evolving_game
+uv sync
+uv run python main.py
+```
+
+各サンプルの操作、テスト、AIへの依頼例は、それぞれのREADMEを参照してください。
+
 ## 参加者向けの事前準備
 
 当日の実習をスムーズに実施できるように、以下を事前に済ませてください:

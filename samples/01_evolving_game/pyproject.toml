@@ -1,0 +1,18 @@
+[project]
+name = "evolving-game"
+version = "0.1.0"
+description = "参加者のアイデアで進化させるネオン・ブロック崩し"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "pygame>=2.6.1,<3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,10 @@
+.vscode/
+.DS_Store
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+*.py[cod]
+samples/03_gesture_arena/models/*.task
