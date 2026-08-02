@@ -27,7 +27,7 @@ ANEC (国際原子力人材育成) 事業の一環として実施する 1.5日�
 
 ## 参加者向けの事前準備
 
-当日の会場ネットワークは帯域が限られるため、以下を事前に済ませてください:
+当日の実習をスムーズに実施できるように、以下を事前に済ませてください:
 
 1. Google アカウント (18歳以上) を用意し、[Google AI Studio](https://aistudio.google.com) にログインできることを確認する
 2. GitHub アカウントを作成し、Student Developer Pack (GitHub Copilot) を有効化する
