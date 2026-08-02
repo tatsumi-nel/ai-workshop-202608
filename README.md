@@ -31,13 +31,6 @@ ANEC (国際原子力人材育成) 事業の一環として実施する 1.5日�
 
 1. Google アカウント (18歳以上) を用意し、[Google AI Studio](https://aistudio.google.com) にログインできることを確認する
 2. GitHub アカウントを作成し、Student Developer Pack (GitHub Copilot) を有効化する
-3. Git をインストールする
-   - Windows: [git-scm.com](https://git-scm.com/download/win) のインストーラを実行
-   - Mac: ターミナルで `xcode-select --install` (ダウンロードが大きいため必ず自宅で)
-4. [uv](https://docs.astral.sh/uv/) をインストールし、続けて `uv python install 3.12` を実行する
-5. [VS Code](https://code.visualstudio.com/) をインストールする
-
-確認コマンド: `git --version` / `uv --version` / `uv python list` (3.12 が表示されること)
 
 ## 備考
 
