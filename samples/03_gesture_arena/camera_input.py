@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass
+from multiprocessing import get_context
+from multiprocessing.queues import Queue
 from pathlib import Path
-from typing import Any
+from platform import system
+from queue import Empty, Full
+from typing import Any, Callable
 from urllib.request import urlopen
 
 from gesture_logic import Gesture, GestureReading, classify_hand
@@ -47,7 +52,8 @@ class CameraGestureController:
 
         self.cv2 = cv2
         self.mp = mp
-        self.capture = cv2.VideoCapture(camera_index)
+        backend = cv2.CAP_AVFOUNDATION if system() == "Darwin" else cv2.CAP_ANY
+        self.capture = cv2.VideoCapture(camera_index, backend)
         if not self.capture.isOpened():
             self.capture.release()
             raise RuntimeError(f"カメラ {camera_index} を開けませんでした")
@@ -98,3 +104,120 @@ class CameraGestureController:
     def close(self) -> None:
         self.hands.close()
         self.capture.release()
+
+
+@dataclass(frozen=True)
+class CameraSnapshot:
+    """ゲーム側が安全に読み取れる、カメラプロセスの最新状態。"""
+
+    reading: GestureReading
+    preview: Any | None
+    status: str
+
+
+class CameraWorker:
+    """ブロッキングするカメラ処理を別プロセスへ分離する。"""
+
+    def __init__(
+        self,
+        camera_index: int = 0,
+        controller_factory: Callable[[int], Any] = CameraGestureController,
+    ) -> None:
+        self.camera_index = camera_index
+        self.controller_factory = controller_factory
+        self._context = get_context("spawn")
+        self._stop = self._context.Event()
+        self._queue: Queue = self._context.Queue(maxsize=2)
+        self._process = None
+        self._snapshot = CameraSnapshot(
+            reading=GestureReading(Gesture.NONE),
+            preview=None,
+            status="CAMERA STARTING...",
+        )
+
+    def start(self) -> None:
+        """すぐに戻り、カメラ初期化はdaemonプロセスで行う。"""
+
+        if self._process is not None:
+            return
+        self._process = self._context.Process(
+            target=_camera_process,
+            args=(
+                self.camera_index,
+                self.controller_factory,
+                self._queue,
+                self._stop,
+            ),
+            name="gesture-camera",
+            daemon=True,
+        )
+        self._process.start()
+
+    def snapshot(self) -> CameraSnapshot:
+        while True:
+            try:
+                self._snapshot = self._queue.get_nowait()
+            except Empty:
+                return self._snapshot
+
+    def stop(self, timeout: float = 0.5) -> None:
+        """終了を通知し、OS内で停止中なら子プロセスだけを終了する。"""
+
+        self._stop.set()
+        if self._process is not None:
+            self._process.join(timeout=timeout)
+            if self._process.is_alive():
+                self._process.terminate()
+                self._process.join(timeout=timeout)
+        self._queue.cancel_join_thread()
+        self._queue.close()
+
+    @property
+    def is_alive(self) -> bool:
+        return self._process is not None and self._process.is_alive()
+
+
+def _publish(queue: Queue, snapshot: CameraSnapshot) -> None:
+    """古いフレームを捨て、常に新しい状態を優先する。"""
+
+    try:
+        queue.put_nowait(snapshot)
+        return
+    except Full:
+        pass
+    try:
+        queue.get_nowait()
+    except Empty:
+        pass
+    try:
+        queue.put_nowait(snapshot)
+    except Full:
+        pass
+
+
+def _camera_process(
+    camera_index: int,
+    controller_factory: Callable[[int], Any],
+    queue: Queue,
+    stop: Any,
+) -> None:
+    """子プロセスでだけOpenCVとMediaPipeを読み込んで実行する。"""
+
+    controller = None
+    try:
+        _publish(queue, CameraSnapshot(GestureReading(Gesture.NONE), None, "OPENING CAMERA..."))
+        controller = controller_factory(camera_index)
+        _publish(queue, CameraSnapshot(GestureReading(Gesture.NONE), None, "CAMERA ONLINE"))
+        while not stop.is_set():
+            reading, preview = controller.read()
+            _publish(queue, CameraSnapshot(reading, preview, "CAMERA ONLINE"))
+    except Exception as error:
+        if isinstance(error, RuntimeError) and "カメラ" in str(error):
+            message = "CAMERA OFFLINE - CHECK PERMISSION"
+        else:
+            message = f"CAMERA OFFLINE: {type(error).__name__}"
+        _publish(queue, CameraSnapshot(GestureReading(Gesture.NONE), None, message))
+        print(f"{message}: {error}", flush=True)
+    finally:
+        if controller is not None:
+            controller.close()
